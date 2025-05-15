@@ -10,6 +10,34 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 const markerGroup = L.layerGroup().addTo(map);
 
+let userMarker = null;
+let userCoords = null;
+
+if (navigator.geolocation) {
+    navigator.geolocation.watchPosition(
+        position => {
+            const { latitude, longitude } = position.coords;
+            userCoords = [latitude, longitude];
+
+            if (userMarker) {
+                userMarker.setLatLng(userCoords);
+            } else {
+                userMarker = L.marker(userCoords, {
+                    icon: L.divIcon({
+                        html: '📌',
+                        className: '',
+                        iconSize: [20, 20]
+                    })
+                }).addTo(map);
+            }
+        },
+        error => {
+            console.error('Error obteniendo ubicación:', error);
+        },
+        { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
+    );
+}
+
 // Obtener los archivos JSON del repositorio
 fetch(apiUrl)
     .then(response => response.json())
@@ -46,6 +74,14 @@ function loadJsonFile(filename) {
             data.forEach(point => {
                 const marker = L.marker(point.coords).addTo(markerGroup);
 
+                const distanceAllowed = 10; // metros
+
+                function canAnswerHere() {
+                    if (!userCoords) return false;
+                    const distance = map.distance(userCoords, point.coords);
+                    return distance <= distanceAllowed;
+                }
+
                 const form = document.createElement('form');
                 form.innerHTML = `<strong>${point.title}</strong><br><p>${point.question}</p>`;
 
@@ -63,13 +99,18 @@ function loadJsonFile(filename) {
                 result.style.marginTop = '8px';
 
                 form.addEventListener('change', () => {
+                    if (!canAnswerHere()) {
+                        result.textContent = `❌ Estás demasiado lejos. Acércate al punto (≤ ${distanceAllowed} m).`;
+                        result.style.color = 'orange';
+                        form.querySelectorAll('input[name="answer"]').forEach(i => i.checked = false);
+                        return;
+                    }
+
                     const selected = form.querySelector('input[name="answer"]:checked');
                     if (selected) {
                         const isCorrect = selected.value === "true";
                         result.textContent = isCorrect ? "✅ ¡Correcto!" : "❌ Incorrecto.";
                         result.style.color = isCorrect ? "green" : "red";
-
-                        // Opcional: Desactivar todos los inputs tras seleccionar
                         form.querySelectorAll('input[name="answer"]').forEach(input => input.disabled = true);
                     }
                 });
