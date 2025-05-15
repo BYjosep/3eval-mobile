@@ -74,7 +74,7 @@ function loadJsonFile(filename) {
             data.forEach(point => {
                 const marker = L.marker(point.coords).addTo(markerGroup);
 
-                const distanceAllowed = 10; // metros
+                const distanceAllowed = 1000; // metros
 
                 function canAnswerHere() {
                     if (!userCoords) return false;
