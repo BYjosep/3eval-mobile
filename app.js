@@ -17,14 +17,14 @@ fetch(apiUrl)
     const jsonFiles = files.filter(file => file.name.endsWith('.json'));
     const selector = document.getElementById('jsonSelector');
 
-    jsonFiles.forEach(file => {
-      const option = document.createElement('option');
-      option.value = file.name;
-      option.textContent = file.name;
-      selector.appendChild(option);
-    });
+      jsonFiles.forEach(file => {
+          const option = document.createElement('option');
+          option.value = file.name;
+          option.textContent = file.name.replace(/\.json$/, '');
+          selector.appendChild(option);
+      });
 
-    selector.addEventListener('change', () => {
+      selector.addEventListener('change', () => {
       const selectedFile = selector.value;
       if (selectedFile) {
         loadJsonFile(selectedFile);
