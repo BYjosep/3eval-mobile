@@ -8,15 +8,19 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 </head>
 <body>
-  <header>
-    <h1>Mapa Interactivo</h1>
+<header>
+  <h1>📍 Mapa de Preguntas</h1>
+  <div class="selector-wrapper">
+    <label for="jsonSelector">Lista:</label>
     <select id="jsonSelector">
-      <option value="">Seleccione una lista</option>
+      <option value="">Selecciona una lista</option>
     </select>
-  </header>
-  <div id="map"></div>
+  </div>
+</header>
 
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script src="app.js"></script>
+<main id="map"></main>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
