@@ -12,23 +12,38 @@ const markerGroup = L.layerGroup().addTo(map);
 
 let userMarker = null;
 let userCoords = null;
+let userHeading = 0;
 
 if (navigator.geolocation) {
     navigator.geolocation.watchPosition(
         position => {
-            const { latitude, longitude } = position.coords;
+            const { latitude, longitude, heading } = position.coords;
             userCoords = [latitude, longitude];
+            if (!isNaN(heading)) userHeading = heading;
+
+            const iconHtml = `
+        <div style="
+          font-size: 24px;
+          transform: rotate(${userHeading}deg);
+          transform-origin: center;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          width: 30px;
+          height: 30px;
+        ">➤</div>`;
+
+            const icon = L.divIcon({
+                html: iconHtml,
+                className: '',
+                iconSize: [30, 30]
+            });
 
             if (userMarker) {
                 userMarker.setLatLng(userCoords);
+                userMarker.setIcon(icon);
             } else {
-                userMarker = L.marker(userCoords, {
-                    icon: L.divIcon({
-                        html: '📌',
-                        className: '',
-                        iconSize: [20, 20]
-                    })
-                }).addTo(map);
+                userMarker = L.marker(userCoords, { icon }).addTo(map);
             }
         },
         error => {
@@ -74,7 +89,7 @@ function loadJsonFile(filename) {
             data.forEach(point => {
                 const marker = L.marker(point.coords).addTo(markerGroup);
 
-                const distanceAllowed = 1000; // metros
+                const distanceAllowed = 10; // metros
 
                 function canAnswerHere() {
                     if (!userCoords) return false;
