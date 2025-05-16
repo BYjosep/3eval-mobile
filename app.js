@@ -13,6 +13,7 @@ const markerGroup = L.layerGroup().addTo(map);
 let userMarker = null;
 let userCoords = null;
 let userHeading = 0;
+let pendingPoints = null;
 
 if (navigator.geolocation) {
     navigator.geolocation.watchPosition(
@@ -45,6 +46,12 @@ if (navigator.geolocation) {
             } else {
                 userMarker = L.marker(userCoords, { icon }).addTo(map);
             }
+
+            // Si ya cargamos puntos pero no habíamos mostrado por falta de ubicación
+            if (pendingPoints) {
+                renderVisiblePoints(pendingPoints);
+                pendingPoints = null;
+            }
         },
         error => {
             console.error('Error obteniendo ubicación:', error);
@@ -63,7 +70,7 @@ fetch(apiUrl)
         jsonFiles.forEach(file => {
             const option = document.createElement('option');
             option.value = file.name;
-            option.textContent = file.name.replace(/\.json$/, '');
+            option.textContent = file.name.replace(/\\.json$/, '');
             selector.appendChild(option);
         });
 
@@ -86,55 +93,66 @@ function loadJsonFile(filename) {
         .then(data => {
             markerGroup.clearLayers();
 
-            data.forEach(point => {
-                const marker = L.marker(point.coords).addTo(markerGroup);
-
-                const distanceAllowed = 10; // metros
-
-                function canAnswerHere() {
-                    if (!userCoords) return false;
-                    const distance = map.distance(userCoords, point.coords);
-                    return distance <= distanceAllowed;
-                }
-
-                const form = document.createElement('form');
-                form.innerHTML = `<strong>${point.title}</strong><br><p>${point.question}</p>`;
-
-                point.answers.forEach((ans, index) => {
-                    const id = `ans-${index}-${Math.random().toString(36).substring(2, 6)}`;
-                    form.innerHTML += `
-            <label for="${id}">
-              <input type="radio" name="answer" value="${ans.correct}" id="${id}" />
-              ${ans.text}
-            </label><br/>
-          `;
-                });
-
-                const result = document.createElement('div');
-                result.style.marginTop = '8px';
-
-                form.addEventListener('change', () => {
-                    if (!canAnswerHere()) {
-                        result.textContent = `❌ Estás demasiado lejos. Acércate al punto (≤ ${distanceAllowed} m).`;
-                        result.style.color = 'orange';
-                        form.querySelectorAll('input[name="answer"]').forEach(i => i.checked = false);
-                        return;
-                    }
-
-                    const selected = form.querySelector('input[name="answer"]:checked');
-                    if (selected) {
-                        const isCorrect = selected.value === "true";
-                        result.textContent = isCorrect ? "✅ ¡Correcto!" : "❌ Incorrecto.";
-                        result.style.color = isCorrect ? "green" : "red";
-                        form.querySelectorAll('input[name="answer"]').forEach(input => input.disabled = true);
-                    }
-                });
-
-                form.appendChild(result);
-                marker.bindPopup(form);
-            });
+            if (!userCoords) {
+                pendingPoints = data;
+                alert("Esperando ubicación para mostrar los puntos cercanos...");
+            } else {
+                renderVisiblePoints(data);
+            }
         })
         .catch(error => {
             console.error('Error al cargar el archivo JSON:', error);
         });
+}
+
+function renderVisiblePoints(data) {
+    const distanceLimit = 100; // metros
+    const visiblePoints = data.filter(point => map.distance(userCoords, point.coords) <= distanceLimit);
+
+    if (visiblePoints.length === 0) {
+        alert("No hay puntos a menos de 100 metros de tu ubicación.");
+    }
+
+    visiblePoints.forEach(point => {
+        const marker = L.marker(point.coords).addTo(markerGroup);
+
+        const distanceToPoint = map.distance(userCoords, point.coords);
+        const allowAnswering = distanceToPoint <= 50;
+
+        const form = document.createElement('form');
+        form.innerHTML = `<strong>${point.title}</strong><br><p>${point.question}</p>`;
+
+        point.answers.forEach((ans, index) => {
+            const id = `ans-${index}-${Math.random().toString(36).substring(2, 6)}`;
+            form.innerHTML += `
+        <label for="${id}">
+          <input type="radio" name="answer" value="${ans.correct}" id="${id}" />
+          ${ans.text}
+        </label><br/>
+      `;
+        });
+
+        const result = document.createElement('div');
+        result.style.marginTop = '8px';
+
+        form.addEventListener('change', () => {
+            if (!allowAnswering) {
+                result.textContent = `❌ Estás demasiado lejos para responder (≤ 50 m).`;
+                result.style.color = 'orange';
+                form.querySelectorAll('input[name="answer"]').forEach(i => i.checked = false);
+                return;
+            }
+
+            const selected = form.querySelector('input[name="answer"]:checked');
+            if (selected) {
+                const isCorrect = selected.value === "true";
+                result.textContent = isCorrect ? "✅ ¡Correcto!" : "❌ Incorrecto.";
+                result.style.color = isCorrect ? "green" : "red";
+                form.querySelectorAll('input[name="answer"]').forEach(input => input.disabled = true);
+            }
+        });
+
+        form.appendChild(result);
+        marker.bindPopup(form);
+    });
 }
