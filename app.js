@@ -119,10 +119,10 @@ function renderVisiblePoints(data) {
 
     // 🔵 Círculo fijo en cada punto
     const area = L.circle(point.coords, {
-        radius: 10,
+        radius: 100,
         color: '#0077ff',
         fillColor: '#0077ff',
-        fillOpacity: 0.1,
+        fillOpacity: 0.15,
         weight: 1,
         interactive: false
     }).addTo(markerGroup);
