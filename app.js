@@ -69,7 +69,7 @@ if (navigator.geolocation) {
     );
 }
 
-// Obtener los archivos JSON del repositorio
+// Cargar listas JSON desde GitHub
 fetch(apiUrl)
     .then(response => response.json())
     .then(files => {
@@ -115,7 +115,7 @@ function loadJsonFile(filename) {
 }
 
 function renderVisiblePoints(data) {
-    markerGroup.clearLayers(); // limpiar sólo una vez
+    markerGroup.clearLayers();
 
     data.forEach(point => {
         const marker = L.marker(point.coords).addTo(markerGroup);
@@ -135,8 +135,34 @@ function renderVisiblePoints(data) {
 
         const result = document.createElement('div');
         result.style.marginTop = '8px';
+        form.appendChild(result);
 
+        marker.bindPopup(form);
+
+        // Bloquear apertura si estás a más de 100 metros
+        marker.on('click', (e) => {
+            if (!userCoords) return;
+
+            const distance = map.distance(userCoords, point.coords);
+            if (distance > 100) {
+                alert(`Estás demasiado lejos para acceder a este punto (distancia: ${Math.round(distance)} m).`);
+                e.originalEvent.stopPropagation();
+                map.closePopup();
+            }
+        });
+
+        // Bloquear respuesta si estás a más de 10 metros
         form.addEventListener('change', () => {
+            if (!userCoords) return;
+
+            const distance = map.distance(userCoords, point.coords);
+            if (distance > 10) {
+                result.textContent = `❌ Estás demasiado lejos para responder (≤ 10 m).`;
+                result.style.color = 'orange';
+                form.querySelectorAll('input[name="answer"]').forEach(i => i.checked = false);
+                return;
+            }
+
             const selected = form.querySelector('input[name="answer"]:checked');
             if (selected) {
                 const isCorrect = selected.value === "true";
@@ -145,20 +171,5 @@ function renderVisiblePoints(data) {
                 form.querySelectorAll('input[name="answer"]').forEach(input => input.disabled = true);
             }
         });
-
-        form.appendChild(result);
-        marker.bindPopup(form);
-
-        // Bloquear apertura del popup si estás lejos
-        marker.on('popupopen', (e) => {
-            if (!userCoords) return;
-
-            const distance = map.distance(userCoords, point.coords);
-            if (distance > 100) {
-                alert(`Estás demasiado lejos para responder esta pregunta (distancia: ${Math.round(distance)} m).`);
-                e.popup._close(); // cerrar el popup inmediatamente
-            }
-        });
     });
 }
-
