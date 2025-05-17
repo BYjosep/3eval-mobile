@@ -11,9 +11,26 @@ let incorrect = 0;
 
 const markerGroup = L.layerGroup().addTo(map);
 
-// Colores seleccionados por el usuario
+// 🎨 Colores seleccionados por el usuario
 const viewColor = localStorage.getItem('colorView') || '#0077cc';
 const answerColor = localStorage.getItem('colorAnswer') || '#28a745';
+
+// 🗺️ Capas base
+const baseMaps = {
+    "Callejero": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }),
+    "Satélite": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri'
+    }),
+    "Relieve": L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+        attribution: 'Map data: &copy; OpenTopoMap'
+    })
+};
+
+// Agregar base predeterminada
+baseMaps["Callejero"].addTo(map);
+L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
 
 function updateStats() {
     document.getElementById('visited-count').textContent = visited;
@@ -33,10 +50,6 @@ document.getElementById('locate-btn').addEventListener('click', () => {
         alert("Ubicación no disponible.");
     }
 });
-
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors'
-}).addTo(map);
 
 if (navigator.geolocation) {
     navigator.geolocation.watchPosition(
