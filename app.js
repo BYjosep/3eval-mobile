@@ -16,6 +16,17 @@ let userCoords = null;
 let userHeading = 0;
 let pendingPoints = null;
 
+let totalAnswered = 0;
+let correctCount = 0;
+let incorrectCount = 0;
+
+// Actualiza estadísticas en la interfaz
+function updateStats() {
+    document.getElementById('total-count').textContent = totalAnswered;
+    document.getElementById('correct-count').textContent = correctCount;
+    document.getElementById('incorrect-count').textContent = incorrectCount;
+}
+
 if (navigator.geolocation) {
     navigator.geolocation.watchPosition(
         position => {
@@ -101,6 +112,10 @@ function loadJsonFile(filename) {
         .then(response => response.json())
         .then(data => {
             markerGroup.clearLayers();
+            totalAnswered = 0;
+            correctCount = 0;
+            incorrectCount = 0;
+            updateStats();
 
             if (!userCoords) {
                 pendingPoints = data;
@@ -120,7 +135,7 @@ function renderVisiblePoints(data) {
     data.forEach(point => {
         const marker = L.marker(point.coords).addTo(markerGroup);
 
-        // Círculo de 100 m como guía visual
+        // Círculo visible de 100 m
         L.circle(point.coords, {
             radius: 100,
             color: '#0077ff',
@@ -149,7 +164,6 @@ function renderVisiblePoints(data) {
 
         marker.bindPopup(form);
 
-        // Bloquear apertura del popup si estás a más de 100 m
         marker.on('click', (e) => {
             if (!userCoords) return;
 
@@ -161,7 +175,6 @@ function renderVisiblePoints(data) {
             }
         });
 
-        // Bloquear respuestas si estás a más de 10 m
         form.addEventListener('change', () => {
             if (!userCoords) return;
 
@@ -176,19 +189,33 @@ function renderVisiblePoints(data) {
             const selected = form.querySelector('input[name="answer"]:checked');
             if (selected) {
                 const isCorrect = selected.value === "true";
-                result.textContent = isCorrect ? "✅ ¡Correcto!" : "❌ Incorrecto.";
-                result.style.color = isCorrect ? "green" : "red";
+                totalAnswered++;
+                if (isCorrect) {
+                    correctCount++;
+                    result.textContent = "✅ ¡Correcto!";
+                    result.style.color = "green";
+                } else {
+                    incorrectCount++;
+                    result.textContent = "❌ Incorrecto.";
+                    result.style.color = "red";
+                }
+                updateStats();
                 form.querySelectorAll('input[name="answer"]').forEach(input => input.disabled = true);
             }
         });
     });
 }
 
-// 🧭 Botón para centrar en tu ubicación
+// 🧭 Botón de localización
 document.getElementById('locate-btn').addEventListener('click', () => {
     if (userCoords) {
         map.setView(userCoords, 17);
     } else {
         alert('Ubicación no disponible.');
     }
+});
+
+// ☰ Botón de menú
+document.getElementById('menu-toggle').addEventListener('click', () => {
+    document.getElementById('sidebar').classList.toggle('open');
 });
