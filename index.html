@@ -3,24 +3,35 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Mapa Interactivo</title>
-  <link rel="stylesheet" href="styles.css" />
+  <title>Mapa de Preguntas</title>
+  <link rel="stylesheet" href="Style.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 </head>
 <body>
-<header>
-  <h1>📍 Mapa de Preguntas</h1>
-  <div class="selector-wrapper">
-    <label for="jsonSelector">Lista:</label>
-    <select id="jsonSelector">
-      <option value="">Selecciona una lista</option>
-    </select>
-  </div>
-</header>
 
-<main id="map"></main>
+<!-- Botón de menú -->
+<button id="menu-toggle" title="Menú">☰</button>
+
+<!-- Menú lateral -->
+<div id="sidebar">
+  <h2>Opciones</h2>
+
+  <label for="jsonSelector">Seleccionar lista:</label>
+  <select id="jsonSelector"></select>
+
+  <div id="stats">
+    <h3>Estadísticas</h3>
+    <p>Total respondidas: <span id="total-count">0</span></p>
+    <p>Correctas: <span id="correct-count">0</span></p>
+    <p>Incorrectas: <span id="incorrect-count">0</span></p>
+  </div>
+</div>
+
+<!-- Botón de localización -->
 <button id="locate-btn" title="Ir a mi ubicación">🧭</button>
 
+<!-- Mapa -->
+<div id="map"></div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="app.js"></script>
