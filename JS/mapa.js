@@ -3,6 +3,7 @@ let mapCentered = false;
 let userCoords = null;
 let userHeading = 0;
 let userMarker = null;
+let rangeCircle = null;
 let visited = 0;
 let correct = 0;
 let incorrect = 0;
@@ -20,6 +21,7 @@ function getQueryParam(name) {
     return params.get(name);
 }
 
+// Botón de centrar ubicación
 document.getElementById('locate-btn').addEventListener('click', () => {
     if (userCoords) {
         map.setView(userCoords, 17);
@@ -28,10 +30,12 @@ document.getElementById('locate-btn').addEventListener('click', () => {
     }
 });
 
+// Cargar tiles del mapa
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
+// Obtener ubicación del usuario y mostrar rango de respuesta
 if (navigator.geolocation) {
     navigator.geolocation.watchPosition(
         position => {
@@ -64,6 +68,19 @@ if (navigator.geolocation) {
                 userMarker = L.marker(userCoords, { icon }).addTo(map);
             }
 
+            // Dibujar o actualizar el círculo de 10 metros
+            if (rangeCircle) {
+                rangeCircle.setLatLng(userCoords);
+            } else {
+                rangeCircle = L.circle(userCoords, {
+                    radius: 10,
+                    color: '#28a745',
+                    fillColor: '#28a745',
+                    fillOpacity: 0.2,
+                    weight: 1
+                }).addTo(map);
+            }
+
             if (!mapCentered) {
                 map.setView(userCoords, 17);
                 mapCentered = true;
@@ -79,6 +96,7 @@ if (navigator.geolocation) {
     );
 }
 
+// Cargar puntos desde GitHub
 const selectedFile = getQueryParam('lista');
 if (selectedFile) {
     const url = `https://raw.githubusercontent.com/BYjosep/data/main/${selectedFile}`;
@@ -100,15 +118,6 @@ function renderPoints(data) {
     data.forEach(point => {
         const marker = L.marker(point.coords).addTo(markerGroup);
 
-        L.circle(point.coords, {
-            radius: 100,
-            color: '#0077ff',
-            fillColor: '#0077ff',
-            fillOpacity: 0.2,
-            weight: 1,
-            interactive: false
-        }).addTo(markerGroup);
-
         const form = document.createElement('form');
         form.innerHTML = `<strong>${point.title}</strong><br><p>${point.question}</p>`;
 
@@ -128,6 +137,7 @@ function renderPoints(data) {
 
         marker.bindPopup(form);
 
+        // Control de visualización por distancia
         marker.on('click', (e) => {
             if (!userCoords) return;
             const distance = map.distance(userCoords, point.coords);
@@ -141,6 +151,7 @@ function renderPoints(data) {
             }
         });
 
+        // Control de respuesta por distancia
         form.addEventListener('change', () => {
             if (!userCoords) return;
 
