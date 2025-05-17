@@ -15,7 +15,6 @@ let userMarker = null;
 let userCoords = null;
 let userHeading = 0;
 let pendingPoints = null;
-let pulseCircle = null;
 
 if (navigator.geolocation) {
     navigator.geolocation.watchPosition(
@@ -47,20 +46,6 @@ if (navigator.geolocation) {
                 userMarker.setIcon(icon);
             } else {
                 userMarker = L.marker(userCoords, { icon }).addTo(map);
-            }
-
-            // Círculo fijo de 10m en la ubicación del usuario (opcional)
-            if (pulseCircle) {
-                pulseCircle.setLatLng(userCoords);
-            } else {
-                pulseCircle = L.circle(userCoords, {
-                    radius: 10,
-                    color: '#00b3ff',
-                    fillColor: '#00b3ff',
-                    fillOpacity: 0.15,
-                    weight: 1,
-                    interactive: false
-                }).addTo(map);
             }
 
             if (!mapCentered) {
@@ -135,7 +120,7 @@ function renderVisiblePoints(data) {
     data.forEach(point => {
         const marker = L.marker(point.coords).addTo(markerGroup);
 
-        // Círculo de 100 m alrededor del punto
+        // Círculo de 100 m como guía visual
         L.circle(point.coords, {
             radius: 100,
             color: '#0077ff',
@@ -164,7 +149,7 @@ function renderVisiblePoints(data) {
 
         marker.bindPopup(form);
 
-        // Bloquear apertura si estás a más de 100 metros
+        // Bloquear apertura del popup si estás a más de 100 m
         marker.on('click', (e) => {
             if (!userCoords) return;
 
@@ -176,7 +161,7 @@ function renderVisiblePoints(data) {
             }
         });
 
-        // Bloquear respuesta si estás a más de 10 metros
+        // Bloquear respuestas si estás a más de 10 m
         form.addEventListener('change', () => {
             if (!userCoords) return;
 
@@ -198,3 +183,12 @@ function renderVisiblePoints(data) {
         });
     });
 }
+
+// 🧭 Botón para centrar en tu ubicación
+document.getElementById('locate-btn').addEventListener('click', () => {
+    if (userCoords) {
+        map.setView(userCoords, 17);
+    } else {
+        alert('Ubicación no disponible.');
+    }
+});
