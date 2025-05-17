@@ -2,7 +2,8 @@ const repoOwner = 'BYjosep';
 const repoName = 'data';
 const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/`;
 
-const map = L.map('map').setView([40.4168, -3.7038], 6); // Centrado en España
+const map = L.map('map');
+let mapCentered = false;
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
@@ -47,14 +48,22 @@ if (navigator.geolocation) {
                 userMarker = L.marker(userCoords, { icon }).addTo(map);
             }
 
-            // Si ya cargamos puntos pero no habíamos mostrado por falta de ubicación
+            if (!mapCentered) {
+                map.setView(userCoords, 17);
+                mapCentered = true;
+            }
+
             if (pendingPoints) {
                 renderVisiblePoints(pendingPoints);
                 pendingPoints = null;
             }
         },
         error => {
-            console.error('Error obteniendo ubicación:', error);
+            console.warn('No se pudo obtener la ubicación, centrando en Roma.');
+            if (!mapCentered) {
+                map.setView([41.9028, 12.4964], 13); // Roma
+                mapCentered = true;
+            }
         },
         { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
     );
@@ -70,7 +79,7 @@ fetch(apiUrl)
         jsonFiles.forEach(file => {
             const option = document.createElement('option');
             option.value = file.name;
-            option.textContent = file.name.replace(/\\.json$/, '');
+            option.textContent = file.name.replace(/\.json$/, '');
             selector.appendChild(option);
         });
 
@@ -95,7 +104,7 @@ function loadJsonFile(filename) {
 
             if (!userCoords) {
                 pendingPoints = data;
-                alert("Esperando ubicación para mostrar los puntos cercanos...");
+                alert("Esperando ubicación para validar distancia...");
             } else {
                 renderVisiblePoints(data);
             }
@@ -106,18 +115,10 @@ function loadJsonFile(filename) {
 }
 
 function renderVisiblePoints(data) {
-    const distanceLimit = 100; // metros
-    const visiblePoints = data.filter(point => map.distance(userCoords, point.coords) <= distanceLimit);
+    markerGroup.clearLayers(); // limpiar sólo una vez
 
-    if (visiblePoints.length === 0) {
-        alert("No hay puntos a menos de 100 metros de tu ubicación.");
-    }
-
-    visiblePoints.forEach(point => {
+    data.forEach(point => {
         const marker = L.marker(point.coords).addTo(markerGroup);
-
-        const distanceToPoint = map.distance(userCoords, point.coords);
-        const allowAnswering = distanceToPoint <= 50;
 
         const form = document.createElement('form');
         form.innerHTML = `<strong>${point.title}</strong><br><p>${point.question}</p>`;
@@ -136,13 +137,6 @@ function renderVisiblePoints(data) {
         result.style.marginTop = '8px';
 
         form.addEventListener('change', () => {
-            if (!allowAnswering) {
-                result.textContent = `❌ Estás demasiado lejos para responder (≤ 50 m).`;
-                result.style.color = 'orange';
-                form.querySelectorAll('input[name="answer"]').forEach(i => i.checked = false);
-                return;
-            }
-
             const selected = form.querySelector('input[name="answer"]:checked');
             if (selected) {
                 const isCorrect = selected.value === "true";
@@ -154,5 +148,17 @@ function renderVisiblePoints(data) {
 
         form.appendChild(result);
         marker.bindPopup(form);
+
+        // Bloquear apertura del popup si estás lejos
+        marker.on('popupopen', (e) => {
+            if (!userCoords) return;
+
+            const distance = map.distance(userCoords, point.coords);
+            if (distance > 100) {
+                alert(`Estás demasiado lejos para responder esta pregunta (distancia: ${Math.round(distance)} m).`);
+                e.popup._close(); // cerrar el popup inmediatamente
+            }
+        });
     });
 }
+
