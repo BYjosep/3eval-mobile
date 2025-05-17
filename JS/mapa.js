@@ -11,6 +11,10 @@ let incorrect = 0;
 
 const markerGroup = L.layerGroup().addTo(map);
 
+// Colores seleccionados por el usuario
+const viewColor = localStorage.getItem('colorView') || '#0077cc';
+const answerColor = localStorage.getItem('colorAnswer') || '#28a745';
+
 function updateStats() {
     document.getElementById('visited-count').textContent = visited;
     document.getElementById('correct-count').textContent = correct;
@@ -22,7 +26,6 @@ function getQueryParam(name) {
     return params.get(name);
 }
 
-// Botón para centrar el mapa
 document.getElementById('locate-btn').addEventListener('click', () => {
     if (userCoords) {
         map.setView(userCoords, 17);
@@ -31,12 +34,10 @@ document.getElementById('locate-btn').addEventListener('click', () => {
     }
 });
 
-// Capa base del mapa
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
-// Obtener ubicación del usuario y actualizar marcador y círculos
 if (navigator.geolocation) {
     navigator.geolocation.watchPosition(
         position => {
@@ -69,27 +70,25 @@ if (navigator.geolocation) {
                 userMarker = L.marker(userCoords, { icon }).addTo(map);
             }
 
-            // Círculo para ver preguntas (100 m)
             if (viewCircle) {
                 viewCircle.setLatLng(userCoords);
             } else {
                 viewCircle = L.circle(userCoords, {
                     radius: 100,
-                    color: '#0077ff',
-                    fillColor: '#0077ff',
+                    color: viewColor,
+                    fillColor: viewColor,
                     fillOpacity: 0.1,
                     weight: 1
                 }).addTo(map);
             }
 
-            // Círculo para responder (20 m)
             if (answerCircle) {
                 answerCircle.setLatLng(userCoords);
             } else {
                 answerCircle = L.circle(userCoords, {
                     radius: 20,
-                    color: '#28a745',
-                    fillColor: '#28a745',
+                    color: answerColor,
+                    fillColor: answerColor,
                     fillOpacity: 0.25,
                     weight: 1
                 }).addTo(map);
@@ -110,7 +109,6 @@ if (navigator.geolocation) {
     );
 }
 
-// Cargar puntos desde GitHub
 const selectedFile = getQueryParam('lista');
 if (selectedFile) {
     const url = `https://raw.githubusercontent.com/BYjosep/data/main/${selectedFile}`;
