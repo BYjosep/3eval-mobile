@@ -15,6 +15,7 @@ let userMarker = null;
 let userCoords = null;
 let userHeading = 0;
 let pendingPoints = null;
+let pulseCircle = null;
 
 if (navigator.geolocation) {
     navigator.geolocation.watchPosition(
@@ -48,6 +49,20 @@ if (navigator.geolocation) {
                 userMarker = L.marker(userCoords, { icon }).addTo(map);
             }
 
+            // Círculo fijo de 10m en la ubicación del usuario (opcional)
+            if (pulseCircle) {
+                pulseCircle.setLatLng(userCoords);
+            } else {
+                pulseCircle = L.circle(userCoords, {
+                    radius: 10,
+                    color: '#00b3ff',
+                    fillColor: '#00b3ff',
+                    fillOpacity: 0.15,
+                    weight: 1,
+                    interactive: false
+                }).addTo(map);
+            }
+
             if (!mapCentered) {
                 map.setView(userCoords, 17);
                 mapCentered = true;
@@ -69,7 +84,7 @@ if (navigator.geolocation) {
     );
 }
 
-// Cargar listas JSON desde GitHub
+// Cargar listas desde GitHub
 fetch(apiUrl)
     .then(response => response.json())
     .then(files => {
@@ -117,18 +132,18 @@ function loadJsonFile(filename) {
 function renderVisiblePoints(data) {
     markerGroup.clearLayers();
 
-    // 🔵 Círculo fijo en cada punto
-    const area = L.circle(point.coords, {
-        radius: 100,
-        color: '#0077ff',
-        fillColor: '#0077ff',
-        fillOpacity: 0.15,
-        weight: 1,
-        interactive: false
-    }).addTo(markerGroup);
-
     data.forEach(point => {
         const marker = L.marker(point.coords).addTo(markerGroup);
+
+        // Círculo de 100 m alrededor del punto
+        L.circle(point.coords, {
+            radius: 100,
+            color: '#0077ff',
+            fillColor: '#0077ff',
+            fillOpacity: 0.2,
+            weight: 1,
+            interactive: false
+        }).addTo(markerGroup);
 
         const form = document.createElement('form');
         form.innerHTML = `<strong>${point.title}</strong><br><p>${point.question}</p>`;
