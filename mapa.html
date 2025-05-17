@@ -9,22 +9,21 @@
 </head>
 <body>
 
-<!-- Barra superior derecha completa -->
-<div id="top-bar">
-  <div id="score-stats">
-    ✅ <strong id="correct-count">0</strong>
-    ❌ <strong id="incorrect-count">0</strong>
-    Visitados: <strong id="visited-count">0</strong>
-  </div>
+<!-- Selector de tipo de mapa centrado -->
+<div id="top-center">
+  <label for="mapType">Vista:</label>
+  <select id="mapType">
+    <option value="callejero">Callejero</option>
+    <option value="satelite">Satélite</option>
+    <option value="relieve">Relieve</option>
+  </select>
+</div>
 
-  <div id="map-type-selector">
-    <label for="mapType">Vista:</label>
-    <select id="mapType">
-      <option value="callejero">Callejero</option>
-      <option value="satelite">Satélite</option>
-      <option value="relieve">Relieve</option>
-    </select>
-  </div>
+<!-- Estadísticas alineadas a la derecha en columna -->
+<div id="top-right">
+  <div>✅ <strong id="correct-count">0</strong></div>
+  <div>❌ <strong id="incorrect-count">0</strong></div>
+  <div>Visitados: <strong id="visited-count">0</strong></div>
 </div>
 
 <!-- Botón de localización -->
