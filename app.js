@@ -117,6 +117,16 @@ function loadJsonFile(filename) {
 function renderVisiblePoints(data) {
     markerGroup.clearLayers();
 
+    // 🔵 Círculo fijo en cada punto
+    const area = L.circle(point.coords, {
+        radius: 10,
+        color: '#0077ff',
+        fillColor: '#0077ff',
+        fillOpacity: 0.1,
+        weight: 1,
+        interactive: false
+    }).addTo(markerGroup);
+
     data.forEach(point => {
         const marker = L.marker(point.coords).addTo(markerGroup);
 
