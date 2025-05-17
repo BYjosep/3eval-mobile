@@ -1,31 +1,36 @@
-const repoOwner = 'BYjosep';
-const repoName = 'data';
-const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/`;
-
 const map = L.map('map');
 let mapCentered = false;
+let userCoords = null;
+let userHeading = 0;
+let userMarker = null;
+let visited = 0;
+let correct = 0;
+let incorrect = 0;
+
+const markerGroup = L.layerGroup().addTo(map);
+
+function updateStats() {
+    document.getElementById('visited-count').textContent = visited;
+    document.getElementById('correct-count').textContent = correct;
+    document.getElementById('incorrect-count').textContent = incorrect;
+}
+
+function getQueryParam(name) {
+    const params = new URLSearchParams(window.location.search);
+    return params.get(name);
+}
+
+document.getElementById('locate-btn').addEventListener('click', () => {
+    if (userCoords) {
+        map.setView(userCoords, 17);
+    } else {
+        alert("Ubicación no disponible.");
+    }
+});
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
-
-const markerGroup = L.layerGroup().addTo(map);
-
-let userMarker = null;
-let userCoords = null;
-let userHeading = 0;
-let pendingPoints = null;
-
-let totalAnswered = 0;
-let correctCount = 0;
-let incorrectCount = 0;
-
-// Actualiza estadísticas en la interfaz
-function updateStats() {
-    document.getElementById('total-count').textContent = totalAnswered;
-    document.getElementById('correct-count').textContent = correctCount;
-    document.getElementById('incorrect-count').textContent = incorrectCount;
-}
 
 if (navigator.geolocation) {
     navigator.geolocation.watchPosition(
@@ -63,16 +68,10 @@ if (navigator.geolocation) {
                 map.setView(userCoords, 17);
                 mapCentered = true;
             }
-
-            if (pendingPoints) {
-                renderVisiblePoints(pendingPoints);
-                pendingPoints = null;
-            }
         },
-        error => {
-            console.warn('No se pudo obtener la ubicación, centrando en Roma.');
+        () => {
             if (!mapCentered) {
-                map.setView([41.9028, 12.4964], 13); // Roma
+                map.setView([41.9028, 12.4964], 13); // Roma fallback
                 mapCentered = true;
             }
         },
@@ -80,62 +79,27 @@ if (navigator.geolocation) {
     );
 }
 
-// Cargar listas desde GitHub
-fetch(apiUrl)
-    .then(response => response.json())
-    .then(files => {
-        const jsonFiles = files.filter(file => file.name.endsWith('.json'));
-        const selector = document.getElementById('jsonSelector');
+const selectedFile = getQueryParam('lista');
+if (selectedFile) {
+    const url = `https://raw.githubusercontent.com/BYjosep/data/main/${selectedFile}`;
 
-        jsonFiles.forEach(file => {
-            const option = document.createElement('option');
-            option.value = file.name;
-            option.textContent = file.name.replace(/\.json$/, '');
-            selector.appendChild(option);
-        });
-
-        selector.addEventListener('change', () => {
-            const selectedFile = selector.value;
-            if (selectedFile) {
-                loadJsonFile(selectedFile);
-            }
-        });
-    })
-    .catch(error => {
-        console.error('Error al obtener los archivos del repositorio:', error);
-    });
-
-function loadJsonFile(filename) {
-    const rawUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/main/${filename}`;
-
-    fetch(rawUrl)
-        .then(response => response.json())
-        .then(data => {
-            markerGroup.clearLayers();
-            totalAnswered = 0;
-            correctCount = 0;
-            incorrectCount = 0;
-            updateStats();
-
-            if (!userCoords) {
-                pendingPoints = data;
-                alert("Esperando ubicación para validar distancia...");
-            } else {
-                renderVisiblePoints(data);
-            }
+    fetch(url)
+        .then(res => res.json())
+        .then(points => {
+            renderPoints(points);
         })
-        .catch(error => {
-            console.error('Error al cargar el archivo JSON:', error);
+        .catch(err => {
+            alert("Error al cargar la lista.");
+            console.error(err);
         });
 }
 
-function renderVisiblePoints(data) {
+function renderPoints(data) {
     markerGroup.clearLayers();
 
     data.forEach(point => {
         const marker = L.marker(point.coords).addTo(markerGroup);
 
-        // Círculo visible de 100 m
         L.circle(point.coords, {
             radius: 100,
             color: '#0077ff',
@@ -149,7 +113,7 @@ function renderVisiblePoints(data) {
         form.innerHTML = `<strong>${point.title}</strong><br><p>${point.question}</p>`;
 
         point.answers.forEach((ans, index) => {
-            const id = `ans-${index}-${Math.random().toString(36).substring(2, 6)}`;
+            const id = `ans-${index}-${Math.random().toString(36).slice(2)}`;
             form.innerHTML += `
         <label for="${id}">
           <input type="radio" name="answer" value="${ans.correct}" id="${id}" />
@@ -166,12 +130,14 @@ function renderVisiblePoints(data) {
 
         marker.on('click', (e) => {
             if (!userCoords) return;
-
             const distance = map.distance(userCoords, point.coords);
             if (distance > 100) {
-                alert(`Estás demasiado lejos para acceder a este punto (distancia: ${Math.round(distance)} m).`);
+                alert(`Demasiado lejos para acceder (distancia: ${Math.round(distance)} m)`);
                 e.originalEvent.stopPropagation();
                 map.closePopup();
+            } else {
+                visited++;
+                updateStats();
             }
         });
 
@@ -180,7 +146,7 @@ function renderVisiblePoints(data) {
 
             const distance = map.distance(userCoords, point.coords);
             if (distance > 10) {
-                result.textContent = `❌ Estás demasiado lejos para responder (≤ 10 m).`;
+                result.textContent = `❌ Estás demasiado lejos para responder (≤ 10 m)`;
                 result.style.color = 'orange';
                 form.querySelectorAll('input[name="answer"]').forEach(i => i.checked = false);
                 return;
@@ -189,33 +155,19 @@ function renderVisiblePoints(data) {
             const selected = form.querySelector('input[name="answer"]:checked');
             if (selected) {
                 const isCorrect = selected.value === "true";
-                totalAnswered++;
                 if (isCorrect) {
-                    correctCount++;
+                    correct++;
                     result.textContent = "✅ ¡Correcto!";
                     result.style.color = "green";
                 } else {
-                    incorrectCount++;
+                    incorrect++;
                     result.textContent = "❌ Incorrecto.";
                     result.style.color = "red";
                 }
+
                 updateStats();
-                form.querySelectorAll('input[name="answer"]').forEach(input => input.disabled = true);
+                form.querySelectorAll('input[name="answer"]').forEach(i => i.disabled = true);
             }
         });
     });
 }
-
-// 🧭 Botón de localización
-document.getElementById('locate-btn').addEventListener('click', () => {
-    if (userCoords) {
-        map.setView(userCoords, 17);
-    } else {
-        alert('Ubicación no disponible.');
-    }
-});
-
-// ☰ Botón de menú
-document.getElementById('menu-toggle').addEventListener('click', () => {
-    document.getElementById('sidebar').classList.toggle('open');
-});
