@@ -3,7 +3,8 @@ let mapCentered = false;
 let userCoords = null;
 let userHeading = 0;
 let userMarker = null;
-let rangeCircle = null;
+let viewCircle = null;
+let answerCircle = null;
 let visited = 0;
 let correct = 0;
 let incorrect = 0;
@@ -21,7 +22,7 @@ function getQueryParam(name) {
     return params.get(name);
 }
 
-// Botón de centrar ubicación
+// Botón para centrar el mapa
 document.getElementById('locate-btn').addEventListener('click', () => {
     if (userCoords) {
         map.setView(userCoords, 17);
@@ -30,12 +31,12 @@ document.getElementById('locate-btn').addEventListener('click', () => {
     }
 });
 
-// Cargar tiles del mapa
+// Capa base del mapa
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
-// Obtener ubicación del usuario y mostrar rango de respuesta
+// Obtener ubicación del usuario y actualizar marcador y círculos
 if (navigator.geolocation) {
     navigator.geolocation.watchPosition(
         position => {
@@ -68,15 +69,28 @@ if (navigator.geolocation) {
                 userMarker = L.marker(userCoords, { icon }).addTo(map);
             }
 
-            // Dibujar o actualizar el círculo de 10 metros
-            if (rangeCircle) {
-                rangeCircle.setLatLng(userCoords);
+            // Círculo para ver preguntas (100 m)
+            if (viewCircle) {
+                viewCircle.setLatLng(userCoords);
             } else {
-                rangeCircle = L.circle(userCoords, {
-                    radius: 10,
+                viewCircle = L.circle(userCoords, {
+                    radius: 100,
+                    color: '#0077ff',
+                    fillColor: '#0077ff',
+                    fillOpacity: 0.1,
+                    weight: 1
+                }).addTo(map);
+            }
+
+            // Círculo para responder (20 m)
+            if (answerCircle) {
+                answerCircle.setLatLng(userCoords);
+            } else {
+                answerCircle = L.circle(userCoords, {
+                    radius: 20,
                     color: '#28a745',
                     fillColor: '#28a745',
-                    fillOpacity: 0.2,
+                    fillOpacity: 0.25,
                     weight: 1
                 }).addTo(map);
             }
@@ -137,7 +151,6 @@ function renderPoints(data) {
 
         marker.bindPopup(form);
 
-        // Control de visualización por distancia
         marker.on('click', (e) => {
             if (!userCoords) return;
             const distance = map.distance(userCoords, point.coords);
@@ -151,13 +164,12 @@ function renderPoints(data) {
             }
         });
 
-        // Control de respuesta por distancia
         form.addEventListener('change', () => {
             if (!userCoords) return;
 
             const distance = map.distance(userCoords, point.coords);
-            if (distance > 10) {
-                result.textContent = `❌ Estás demasiado lejos para responder (≤ 10 m)`;
+            if (distance > 20) {
+                result.textContent = `❌ Estás demasiado lejos para responder (≤ 20 m)`;
                 result.style.color = 'orange';
                 form.querySelectorAll('input[name="answer"]').forEach(i => i.checked = false);
                 return;
