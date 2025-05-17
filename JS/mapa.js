@@ -8,41 +8,53 @@ let answerCircle = null;
 let visited = 0;
 let correct = 0;
 let incorrect = 0;
-
 const markerGroup = L.layerGroup().addTo(map);
 
-// 🎨 Colores seleccionados por el usuario
+// 🎨 Colores personalizados
 const viewColor = localStorage.getItem('colorView') || '#0077cc';
 const answerColor = localStorage.getItem('colorAnswer') || '#28a745';
 
 // 🗺️ Capas base
-const baseMaps = {
-    "Callejero": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
+const tileLayers = {
+    callejero: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap'
     }),
-    "Satélite": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    satelite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
         attribution: 'Tiles &copy; Esri'
     }),
-    "Relieve": L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-        attribution: 'Map data: &copy; OpenTopoMap'
+    relieve: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenTopoMap'
     })
 };
 
-// Agregar base predeterminada
-baseMaps["Callejero"].addTo(map);
-L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
+// Cargar capa por defecto
+tileLayers.callejero.addTo(map);
+let currentLayer = tileLayers.callejero;
 
+// Selector de tipo de mapa
+document.getElementById('mapType').addEventListener('change', (e) => {
+    const selected = e.target.value;
+    if (tileLayers[selected]) {
+        map.removeLayer(currentLayer);
+        currentLayer = tileLayers[selected];
+        currentLayer.addTo(map);
+    }
+});
+
+// Obtener parámetros de URL
+function getQueryParam(name) {
+    const params = new URLSearchParams(window.location.search);
+    return params.get(name);
+}
+
+// Actualizar estadísticas
 function updateStats() {
     document.getElementById('visited-count').textContent = visited;
     document.getElementById('correct-count').textContent = correct;
     document.getElementById('incorrect-count').textContent = incorrect;
 }
 
-function getQueryParam(name) {
-    const params = new URLSearchParams(window.location.search);
-    return params.get(name);
-}
-
+// Botón de centrar mapa
 document.getElementById('locate-btn').addEventListener('click', () => {
     if (userCoords) {
         map.setView(userCoords, 17);
@@ -51,6 +63,7 @@ document.getElementById('locate-btn').addEventListener('click', () => {
     }
 });
 
+// Geolocalización
 if (navigator.geolocation) {
     navigator.geolocation.watchPosition(
         position => {
@@ -122,15 +135,13 @@ if (navigator.geolocation) {
     );
 }
 
+// Cargar puntos desde GitHub
 const selectedFile = getQueryParam('lista');
 if (selectedFile) {
     const url = `https://raw.githubusercontent.com/BYjosep/data/main/${selectedFile}`;
-
     fetch(url)
         .then(res => res.json())
-        .then(points => {
-            renderPoints(points);
-        })
+        .then(points => renderPoints(points))
         .catch(err => {
             alert("Error al cargar la lista.");
             console.error(err);

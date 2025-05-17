@@ -1,55 +1,69 @@
-html, body {
+/* Reset y estilo base */
+body, html {
     margin: 0;
     padding: 0;
     height: 100%;
     font-family: 'Segoe UI', sans-serif;
-    overflow: hidden;
 }
 
-#score-bar {
-    position: absolute;
-    top: 0;
-    left: 0;
+/* Mapa a pantalla completa */
+#map {
+    height: 100%;
     width: 100%;
-    background-color: white;
-    color: #0077cc;
-    font-size: 16px;
-    font-weight: bold;
-    padding: 10px 0;
-    text-align: center;
-    z-index: 1001;
-    border-bottom: 1px solid #ccc;
+    z-index: 0;
 }
 
+/* Botón de ubicación */
 #locate-btn {
     position: absolute;
     bottom: 20px;
     right: 15px;
-    z-index: 999;
+    z-index: 1001;
     background: white;
-    border: 2px solid #0077cc;
+    border: none;
     border-radius: 50%;
-    width: 48px;
-    height: 48px;
+    width: 44px;
+    height: 44px;
     font-size: 22px;
-    font-weight: bold;
-    color: #0077cc;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
     cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-    transition: transform 0.2s ease;
 }
 
-#locate-btn:hover {
-    transform: scale(1.1);
-    background-color: #eef7ff;
-}
-
-#map {
+/* Barra superior derecha: puntuación + selector */
+#top-bar {
     position: absolute;
-    top: 40px;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 0;
-    background: #e0e0e0;
+    top: 10px;
+    right: 10px;
+    z-index: 1001;
+    background: white;
+    padding: 6px 10px;
+    border-radius: 6px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+/* Estadísticas */
+#score-stats {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+/* Selector de vista */
+#map-type-selector {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+#map-type-selector label {
+    font-size: 0.9rem;
+}
+
+#map-type-selector select {
+    font-size: 1rem;
+    padding: 3px 6px;
 }

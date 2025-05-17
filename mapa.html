@@ -2,22 +2,33 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Mapa de Preguntas</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mapa Interactivo</title>
   <link rel="stylesheet" href="CSS/mapa.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 </head>
 <body>
 
-<!-- Encabezado con puntuación -->
-<header id="score-bar">
-  Visitados: <span id="visited-count">0</span> |
-  Correctos: <span id="correct-count">0</span> |
-  Incorrectos: <span id="incorrect-count">0</span>
-</header>
+<!-- Barra superior derecha completa -->
+<div id="top-bar">
+  <div id="score-stats">
+    ✅ <strong id="correct-count">0</strong>
+    ❌ <strong id="incorrect-count">0</strong>
+    Visitados: <strong id="visited-count">0</strong>
+  </div>
 
-<!-- Botón para centrar en ubicación -->
-<button id="locate-btn" title="Centrar en mi ubicación">🧭</button>
+  <div id="map-type-selector">
+    <label for="mapType">Vista:</label>
+    <select id="mapType">
+      <option value="callejero">Callejero</option>
+      <option value="satelite">Satélite</option>
+      <option value="relieve">Relieve</option>
+    </select>
+  </div>
+</div>
+
+<!-- Botón de localización -->
+<button id="locate-btn" title="Ir a mi ubicación">🧭</button>
 
 <!-- Mapa -->
 <div id="map"></div>
